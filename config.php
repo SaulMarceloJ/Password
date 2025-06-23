@@ -1,14 +1,21 @@
 <?php
 session_start();
 
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_NAME', 'sistema_login');
+// Ruta del archivo SQLite (se creará automáticamente si no existe)
+define('DB_PATH', 'sistema_login.db');
 
 try {
-    $pdo = new PDO("mysql:host=".DB_HOST.";dbname=".DB_NAME, DB_USER, DB_PASS);
+    $pdo = new PDO("sqlite:" . DB_PATH);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Crear la tabla si no existe (esto es útil en Replit)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL,
+        password TEXT NOT NULL
+    )");
+    
 } catch (PDOException $e) {
     die("Error de conexión: " . $e->getMessage());
 }
@@ -24,7 +31,7 @@ function verificarLogin($username, $password) {
     global $pdo;
     $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE username = ?");
     $stmt->execute([$username]);
-    $user = $stmt->fetch();
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
     return ($user && password_verify($password, $user['password'])) ? $user : false;
 }
 
@@ -46,5 +53,4 @@ function eliminarUsuario($id) {
     $stmt = $pdo->prepare("DELETE FROM usuarios WHERE id = ?");
     return $stmt->execute([$id]);
 }
-
 ?>
